@@ -1,0 +1,227 @@
+@name E2 Nav Mesh Creator & Editor By Naki
+@inputs EGP:wirelink
+#Data
+@persist Array:array Nodes:string
+
+#Values
+@persist Edit Loaded CheckIndex
+
+#Config
+@persist SaveFolder:string RenderRange MaxNodesInRange
+
+#Debugging stuff
+@outputs Array:array Nodes:string Loaded
+
+runOnChat(1)
+runOnKeys(owner(),1)
+interval(100)
+
+if(first()){
+    
+    #[
+    
+                !!! Introduction !!!
+    
+    
+        Hello, my name is Naki
+        
+        This is my experimental E2 Nav Mesh Creator & Editor Code
+        
+        It is semi easy to use, but it is recommended that you read through the instructions first
+        
+        
+        First of all the Config can be found below,
+        
+        This includes;
+        
+        Save folder path
+        
+        Render range for the nodes in edit mode
+        
+        Maxium amount of nodes rendered at once
+        
+        
+        For now the files are saved as Folder/*map name*.txt
+        
+        Altho there will be a way to save it with a name you would like to use later on when i get some motivation to finish this
+        
+        
+        Now how to use this,
+        
+        First wire an EGP Hud to the e2 so you can see the nodes in .edit mode
+        
+        You can create a nav mesh manually only for now using .edit command in chat
+        (You will need to link up an EGP Hud so you can see the nodes)
+        
+        Next up Left click will place nodes where you look at, note that you cannot place nodes that are out of your Render range
+        
+        At the moment there is no way to remove specific nodes so in case you want to remove a node, you have to start over using the .clear
+        
+        With .clear you can clear all the nodes that you have created, this will not remove your saved .txt files of course
+        
+        For saving and loading files you can use .save and .load
+        
+        The default path of these files are "Garry's Mod/Garry's Mod/data/e2files/e2navmesh/"
+        
+        
+        If you have anymore questions,
+        
+        Social Media:
+        
+        Discord: Naki#0271
+        
+        Youtube: https://www.youtube.com/channel/UCz7XiAeqo4WPyNljkKe-UJQ
+        
+        Instagram: https://www.instagram.com/nakkitsunami/
+        
+        Steam: https://steamcommunity.com/id/Nakkivatti/
+        
+        
+        More coding stuff: 
+        
+        https://github.com/4naki
+        
+    ]#
+    
+    #Config
+    
+    #Nav Mesh Save Folder Path
+    SaveFolder="e2navmesh/"
+    
+    RenderRange=2000
+    MaxNodesInRange=100
+    
+    
+    #Editing Ends Here!
+    
+    Loaded=0
+    EGP:egpClear()
+}
+
+#--- Chat Commands ---
+
+LS=owner():lastSaid():explode(" ")
+
+if(chatClk(owner())){
+    if(LS[1,string]:lower()==".save"){
+        hideChat(1)
+        timer("save",100)
+    }
+    if(LS[1,string]:lower()==".load"){
+        hideChat(1)
+        timer("load",100)
+    }
+    if(LS[1,string]:lower()==".unload"){
+        hideChat(1)
+        timer("unload",100)
+    }
+    if(LS[1,string]:lower()==".clear"){
+        hideChat(1)
+        timer("clear",100)
+    }
+    if(LS[1,string]:lower()==".edit"){
+        hideChat(1)
+        timer("edit",100)
+    }
+}
+
+#--- File Save & Write ---
+
+if(clk("save")){
+    #fileWrite(string filename,string data)
+    fileWrite(SaveFolder+map()+"_e2_nav_mesh"+".txt",Nodes)
+    
+    print(_HUD_PRINTCONSOLE,"DEBUG: Saved as: "+SaveFolder+map()+"_e2_nav_mesh"+".txt")
+    hint("Saved as: "+SaveFolder+map()+"_e2_nav_mesh"+".txt",1000)
+}
+if(clk("load")){
+    Loaded=1
+    #fileLoad(string filename)
+    fileLoad(SaveFolder+map()+"_e2_nav_mesh"+".txt")
+    
+    print(_HUD_PRINTCONSOLE,"DEBUG: Loaded: "+SaveFolder+map()+"_e2_nav_mesh"+".txt")
+    hint("Loaded: "+SaveFolder+map()+"_e2_nav_mesh"+".txt",1000)
+}
+
+#--- Editor ---
+
+if(clk("unload")){
+    Loaded=0
+    print(_HUD_PRINTCONSOLE,"DEBUG: Unloaded: "+SaveFolder+map()+"_e2_nav_mesh"+".txt")
+    hint("Unloaded: "+SaveFolder+map()+"_e2_nav_mesh"+".txt",1000)
+}
+if(clk("clear")){
+    Loaded=0
+    print(_HUD_PRINTCONSOLE,"DEBUG: Cleared Currently Existing Nodes")
+    hint("Loaded: Cleared Currently Existing Nodes",1000)
+    Nodes=""
+}
+if(clk("edit")){
+    Edit=!Edit
+}
+if(changed(Edit)){
+    if(Edit){
+        hint("Edit mode: On",100)
+    }else{
+        hint("Edit mode: Off",100)
+    }
+}
+
+if(Edit){
+    Array=Nodes:explode(" ")
+    if(owner():weapon():type()=="none"){
+        if(owner():shootPos():distance(owner():aimPos())<RenderRange){
+            if(keyClk()){
+                if(changed(owner():keyAttack1())&owner():keyAttack1()){
+                    Nodes=Nodes+""+(ceil(owner():aimPos(),1)):x()+","+(ceil(owner():aimPos(),1)):y()+","+(ceil(owner():aimPos(),1)):z()+" "
+                }
+            }
+        }
+    }
+}
+
+#--- Data Convertion Stuff & EGP Hud Nodes ---
+
+if(Loaded){
+if(!(fileRead()=="")){
+    Array=fileRead():explode(" ")
+}else{
+    Array=Nodes:explode(" ")
+}
+}else{
+    Array=Nodes:explode(" ")
+}
+for(I=1,Array:count()){
+    S=Array[I,string]
+    V=vec(S:explode(",")[1,string]:toNumber(),S:explode(",")[2,string]:toNumber(),S:explode(",")[3,string]:toNumber())
+    if(Edit){
+        if(owner():shootPos():distance(V)<RenderRange){
+            EGP:egp3DTracker(I,V)
+            EGP:egpCircle(I+MaxNodesInRange,vec2(0,0),vec2(15,15))
+            EGP:egpPos(I+MaxNodesInRange,V)
+            EGP:egpParent(I+MaxNodesInRange,I)
+        }else{
+            EGP:egpRemove(I)
+            EGP:egpRemove(I+MaxNodesInRange)
+        }
+    }else{
+        EGP:egpRemove(I)
+        EGP:egpRemove(I+MaxNodesInRange)
+    }
+}
+
+#--- End of coding, these last lines check of the remaining Nodes in the egp hud when you clear your nav mesh ---
+
+if(changed(Array:count())){
+CheckIndex=Array:count()
+}
+CheckIndex++
+
+if(CheckIndex>Array:count()){
+    EGP:egpRemove(CheckIndex)
+    EGP:egpRemove(CheckIndex+MaxNodesInRange)
+}
+
+if(dupefinished()){
+    reset()
+}
